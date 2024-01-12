@@ -6,9 +6,10 @@ Resources:
   Ec2Instance:
     Type: 'AWS::EC2::Instance'
     Properties:
-      InstanceType: ""
-      SubnetId: ""
-      SecurityGroups:
+      AvailabilityZone: "eu-west-2c"
+      InstanceType: "t3.medium"
+      SubnetId: "subnet-083f3ffaafbbf9e90"
+      SecurityGroupIds:
         - sg-08fec4972b48584b7
         - sg-0a1414ba1e20a015b
         - sg-047ad98317f2a7670
