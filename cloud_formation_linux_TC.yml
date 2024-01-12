@@ -1,7 +1,7 @@
-Parameters:
-  KeyName:
-    Description: The EC2 Key Pair to allow SSH access to the instance
-    Type: 'AWS::EC2::KeyPair::RM-KP-1'
+# Parameters:
+#   KeyName:
+#     Description: The EC2 Key Pair to allow SSH access to the instance
+#     Type: 'AWS::EC2::KeyPair::RM-KP-1'
 Resources:
   Ec2Instance:
     Type: 'AWS::EC2::Instance'
@@ -14,16 +14,16 @@ Resources:
         - sg-0a1414ba1e20a015b
         - sg-047ad98317f2a7670
         - sg-063b929ac771da0ca
-      KeyName: !Ref KeyName
+      KeyName: 'RM-KP-1' #!Ref KeyName
       # Image ref to be used as base
       ImageId: ami-0505148b3591e4c07
       Tags:
         # EC2 Tags
         ## Set Name of EC2 Node
-        - Key: "Name"
+        - Key: Name
           Value: "My First CF Node" # Can this be an Octo var?
         ##Additional Tags
-        - Key: "Environment"
+        - Key: Environment
           Value: "PPE"
-        - Key: "Schedule"
-          Vaule: "ppe-schedule"
+        - Key: Schedule
+          Value: "ppe-schedule"
