@@ -16,19 +16,31 @@ mainSteps:
     inputs:
       Runtime: PowerShell 7.0
       Script: |-
+        if ($IsWindows){
+            <# Setup variables #>
+            $ActivePropFile     = "D:\BuildAgent\conf\buildAgent.properties"
+            $ActivePropFileOld  = "D:\BuildAgent\conf\buildAgent.properties.old"
+            $TemplatePropFile   = "D:\BuildAgent\conf\buildAgent.properties.template"
 
-        <# Setup variables #>
-        $ActivePropFile     = "D:\BuildAgent\conf\buildAgent.properties"
-        $ActivePropFileOld  = "D:\BuildAgent\conf\buildAgent.properties.old"
-        $TemplatePropFile   = "D:\BuildAgent\conf\buildAgent.properties.template"
+            <# Cleanup Logs, Temp, and Work folders for BuildAgent #>
+            Remove-Item "D:\BuildAgent\logs\*.*"
+            Remove-Item "D:\BuildAgent\temp\*.*"
+            Remove-Item "D:\BuildAgent\work\*.*"
 
-        <# Cleanup Logs, Temp, and Work folders for BuildAgent #>
-        Remove-Item "D:\BuildAgent\logs\*.*"
-        Remove-Item "D:\BuildAgent\temp\*.*"
-        Remove-Item "D:\BuildAgent\work\*.*"
+            <# Stop TeamCity Service #>
+            Stop-Service -Name "TCBuildAgent" -Force
+        }
+        elsif ($IsLinux){
+            <# Setup variables #>
+            $ActivePropFile     = "~/BuildAgent/conf/buildAgent.properties"
+            $ActivePropFileOld  = "~/BuildAgent/conf/buildAgent.properties.old"
+            $TemplatePropFile   = "~/BuildAgent/conf/buildAgent.properties.template"
 
-        <# Stop TeamCity Service #>
-        Stop-Service -Name "TCBuildAgent" -Force
+            <# Cleanup Logs, Temp, and Work folders for BuildAgent #>
+            Remove-Item "~/BuildAgent/logs/*.*"
+            Remove-Item "~/BuildAgent\temp/*.*"
+            Remove-Item "~/BuildAgent/work/*.*"
+        }
 
         <# Replace active properties file with template file #>
         Rename-Item -Path $ActivePropFile -NewName $ActivePropFileOld
@@ -52,10 +64,18 @@ mainSteps:
       Runtime: PowerShell 7.0
       Script: |-
 
-        <# Setup variables #>
-        $ActivePropFile     = "D:\BuildAgent\conf\buildAgent.properties"
-        $ActivePropFileOld  = "D:\BuildAgent\conf\buildAgent.properties.old"
-        $TemplatePropFile   = "D:\BuildAgent\conf\buildAgent.properties.template"
+        if ($IsWindows){
+            <# Setup variables #>
+            $ActivePropFile     = "D:\BuildAgent\conf\buildAgent.properties"
+            $ActivePropFileOld  = "D:\BuildAgent\conf\buildAgent.properties.old"
+            $TemplatePropFile   = "D:\BuildAgent\conf\buildAgent.properties.template"
+        }
+        elsif ($IsLinux){
+            <# Setup variables #>
+            $ActivePropFile     = "~/BuildAgent/conf/buildAgent.properties"
+            $ActivePropFileOld  = "~/BuildAgent/conf/buildAgent.properties.old"
+            $TemplatePropFile   = "~/BuildAgent/conf/buildAgent.properties.template"
+        }
 
         <#  #>
         Rename-Item -Path $ActivePropFile -NewName $TemplatePropFile
@@ -63,8 +83,10 @@ mainSteps:
         <#  #>
         Rename-Item -Path $ActivePropFileOld -NewName $ActivePropFile
 
-        <# Start previously stopped TCAgent Service #>
-        Start-Service -Name "TCBuildAgent"
+        if ($IsWindows){
+            <# Start previously stopped TCAgent Service #>
+            Start-Service -Name "TCBuildAgent"
+        }
         
 outputs:
   - Create_EC2_AMI.ImageId
