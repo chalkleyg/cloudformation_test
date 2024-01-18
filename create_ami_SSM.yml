@@ -1,24 +1,70 @@
-description: Creates a new Amazon Machine Image (AMI) from an Amazon EC2 instance
 schemaVersion: '0.3'
-assumeRole: '{{ AutomationAssumeRole }}'
 parameters:
   InstanceId:
     type: String
     description: (Required) The ID of the Amazon EC2 instance.
-  AutomationAssumeRole:
-    type: String
-    description: '(Optional) The ARN of the role that allows Automation to perform the actions on your behalf. '
-    default: ''
   ImageName:
     type: String
     description: (Required) The name of the outputted AMI.
+description: Creates AMI from known EC2 instance.
 mainSteps:
+  - name: Cleanup_Script
+    action: aws:executeScript
+    nextStep: Create_EC2_AMI
+    isEnd: false
+    onFailure: Abort
+    inputs:
+      Runtime: PowerShell 7.0
+      Script: |-
+
+        <# Setup variables #>
+        $ActivePropFile     = "D:\BuildAgent\conf\buildAgent.properties"
+        $ActivePropFileOld  = "D:\BuildAgent\conf\buildAgent.properties.old"
+        $TemplatePropFile   = "D:\BuildAgent\conf\buildAgent.properties.template"
+
+        <# Cleanup Logs, Temp, and Work folders for BuildAgent #>
+        Remove-Item "D:\BuildAgent\logs\*.*"
+        Remove-Item "D:\BuildAgent\temp\*.*"
+        Remove-Item "D:\BuildAgent\work\*.*"
+
+        <# Stop TeamCity Service #>
+        Stop-Service -Name "TCBuildAgent" -Force
+
+        <# Replace active properties file with template file #>
+        Rename-Item -Path $ActivePropFile -NewName $ActivePropFileOld
+
+        <# Replace active properties file with template file #>
+        Rename-Item -Path $TemplatePropFile -NewName $ActivePropFile
+
   - name: Create_EC2_AMI
     action: aws:createImage
-    isEnd: true
+    nextStep: Replace_Original_Data
+    isEnd: false
     onFailure: Abort
     inputs:
       InstanceId: '{{ InstanceId }}'
       ImageName: '{{ ImageName }}'
+  - name: Replace_Original_Data
+    action: aws:executeScript
+    isEnd: true
+    onFailure: Abort
+    inputs:
+      Runtime: PowerShell 7.0
+      Script: |-
+
+        <# Setup variables #>
+        $ActivePropFile     = "D:\BuildAgent\conf\buildAgent.properties"
+        $ActivePropFileOld  = "D:\BuildAgent\conf\buildAgent.properties.old"
+        $TemplatePropFile   = "D:\BuildAgent\conf\buildAgent.properties.template"
+
+        <#  #>
+        Rename-Item -Path $ActivePropFile -NewName $TemplatePropFile
+
+        <#  #>
+        Rename-Item -Path $ActivePropFileOld -NewName $ActivePropFile
+
+        <# Start previously stopped TCAgent Service #>
+        Start-Service -Name "TCBuildAgent"
+        
 outputs:
   - Create_EC2_AMI.ImageId
